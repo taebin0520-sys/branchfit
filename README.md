@@ -3,7 +3,6 @@
 > 데모: https://branchfit-c7fewtvqdphxpfvsfzt4ws.streamlit.app/
 
 ![BranchFit 화면](docs/screenshot.png)
-<!-- TODO: streamlit 실행 화면 캡처 후 docs/screenshot.png 추가 -->
 
 # BranchFit P0
 
