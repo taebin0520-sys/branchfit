@@ -1,0 +1,9 @@
+# BranchFit P0 의존성
+#
+# LLM 호출은 표준 라이브러리(urllib)로 구현했으므로 openai SDK가 필요하지 않습니다.
+# 검증기(validator)와 AI 입력 계약(contract)도 표준 라이브러리만 씁니다.
+# → 실제 추가 의존성은 아래 3개뿐입니다.
+
+pandas>=2.0
+streamlit>=1.49      # st.dataframe(width="stretch") API 사용
+pytest>=8.0          # 테스트 실행용
