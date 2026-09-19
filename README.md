@@ -1,3 +1,7 @@
+> 📁 **포트폴리오 프로젝트입니다.**
+> Wanted AI Championship 2026 해커톤 기획서(BranchFit P0)를 기반으로 개인적으로 설계·구현한 프로젝트이며, 별도 팀/해커톤 제출물이 아닙니다.
+> 데모: https://branchfit-c7fewtvqdphxpfvsfzt4ws.streamlit.app/
+
 # BranchFit P0
 
 개별 점포 통·폐합 **검토를 지원**하는 AI 에이전트 프로토타입.
