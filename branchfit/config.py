@@ -5,7 +5,8 @@
 모두 이 파일의 상수를 참조하도록 해서,
 기획서 수정 → 코드 한 곳 수정으로 끝나게 만드는 것이 목적입니다.
 
-기준: BranchFit P0 기획 기준안 / dataset_version 2026-09-08_v3
+기준: BranchFit P0 기획 기준안 (기획서 작성 시점 dataset_version 2026-09-08_v3)
+현재 데이터셋 버전은 아래 DATASET_VERSION 을 참조하십시오.
 """
 
 from __future__ import annotations
@@ -17,8 +18,11 @@ from __future__ import annotations
 #: AI 입력 JSON의 계약(contract) 버전. 필드 구조가 바뀌면 올립니다.
 SCHEMA_VERSION = "1.0.0"
 
-#: 데이터셋 버전. 기획서 전체가 이 버전을 기준으로 작성됨.
-DATASET_VERSION = "2026-09-08_v3"
+#: 데이터셋 버전.
+#: v3(2026-09-08) -> v4(2026-09-19): 자치구 지역 데이터를 공식 자료로 교체하면서
+#: IBK 영업점 조회 기준시점이 2026-09-08에서 2026-09-19로 바뀌었기 때문에 버전을 올렸다.
+#: 기준시점이 바뀌었는데 버전을 그대로 두면, 결과 재현이 불가능해진다.
+DATASET_VERSION = "2026-09-19_v4"
 
 #: P0 모집단 = 서울 25개 자치구 (기획서 4절 범위 동결)
 EXPECTED_REGION_COUNT = 25
@@ -173,14 +177,14 @@ EVIDENCE = {
     "EV-IBK": {
         "field": "ibk_branches, 개별 점포 목록",
         "source": "IBK기업은행 공식 영업점찾기",
-        "reference_date": "2026-09-08",
+        "reference_date": "2026-09-19",
         "url": "https://kiupbank.ttmap.co.kr/main.jsp",
         "role": "밀도지표 분자 · 개별 점포 식별",
     },
     "EV-IBK-XCHK": {
         "field": "점포명세 교차검증",
         "source": "공공데이터포털 IBK 점포명세",
-        "reference_date": "2026-09-08",
+        "reference_date": "2026-09-19",
         "url": "https://www.data.go.kr/data/15006875/fileData.do",
         "role": "교차검증용",
     },
@@ -214,8 +218,15 @@ LIMITATIONS = [
     "지점별 이용권역, 생활인구, 이동거리, 운영비용, 거래량, 고객 이탈은 P0에서 측정하지 않습니다.",
     "신설·폐쇄·최적입지·대체수단·수익성·금융수요를 추천하거나 예측하지 않습니다.",
     "금융위원회의 공식 사전영향평가를 수행하거나 대체하지 않습니다.",
-    "인구(2026-07-31)·사업체(2024-12-31)·IBK 영업점(2026-09-08)의 기준시점이 서로 다르며, "
-    "특히 주지표 분모인 사업체 수는 다른 두 자료보다 앞선 시점의 값입니다.",
+    # 기준시점은 EVIDENCE에서 끌어옵니다.
+    # 여기에 날짜를 직접 써두면 데이터를 교체할 때 문구만 옛 날짜로 남아
+    # 화면에 사실과 다른 기준시점이 표시됩니다(실제로 v3->v4 교체 때 발생한 문제).
+    "인구({pop})·사업체({biz})·IBK 영업점({ibk})의 기준시점이 서로 다르며, "
+    "특히 주지표 분모인 사업체 수는 다른 두 자료보다 앞선 시점의 값입니다.".format(
+        pop=EVIDENCE["EV-POP"]["reference_date"],
+        biz=EVIDENCE["EV-BIZ"]["reference_date"],
+        ibk=EVIDENCE["EV-IBK"]["reference_date"],
+    ),
     "지역 맥락 지표는 자치구 단위이므로 같은 자치구의 개별 점포는 동일한 값으로 표시되며, "
     "이는 개별 점포의 성과·수요·이용행태 차이를 의미하지 않습니다.",
 ]
