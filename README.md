@@ -6,7 +6,7 @@
 > **통·폐합 여부를 판정하거나 추천하지 않습니다.** 최종 판단은 담당자가 수행합니다.
 > BranchFit은 IBK기업은행의 공식 서비스가 아니며, 공개 영업점 정보를 활용한 제3자 분석 프로토타입입니다.
 
-- `dataset_version`: `2026-09-08_v3`
+- `dataset_version`: `2026-09-19_v4`
 - 모집단: 서울 25개 자치구 / 분석 대상 IBK 영업점 182개
 
 ---
@@ -77,8 +77,8 @@ branchfit/
 │   ├── briefing.py             LLM 호출 + 결정론적 템플릿 fallback
 │   └── pipeline.py             위 순서를 잇는 조립부
 ├── data/raw/
-│   ├── seoul_districts_2026-09-08_v3.csv   자치구 25행 (인구·사업체·영업점 수)
-│   └── ibk_branches_2026-09-08_v3.csv      개별 점포 182행 (Point Data Layer)
+│   ├── seoul_districts_2026-09-19_v4.csv   자치구 25행 (인구·사업체·영업점 수)
+│   └── ibk_branches_2026-09-19_v4.csv      개별 점포 182행 (Point Data Layer)
 ├── scripts/
 │   ├── make_branch_seed.py     점포 목록 CSV 생성 (자치구별 합계와 구조적으로 일치)
 │   └── selfcheck.py            의존성 없는 데이터·가드레일 자기점검
@@ -187,14 +187,21 @@ Series.rank(method="min", pct=True, ascending=True) * 100
 
 ## 6. 데이터 상태 — 중요
 
-**현재 `data/raw/`의 수치는 실제 공식 데이터가 아니라 placeholder(합성값)입니다.**
-`data_status`, `name_source` 컬럼에 그렇게 표시되어 있습니다.
+데이터 상태가 **항목마다 다릅니다.** CSV의 `data_status` / `name_source` 컬럼에 표시되어 있습니다.
 
-이렇게 한 이유: 파이프라인·검증·화면을 먼저 완성해 두면,
-실제 공식 데이터를 받았을 때 **CSV 두 개만 교체**하면 끝납니다.
-그리고 교체 즉시 `scripts/selfcheck.py`가 정합성이 깨졌는지 알려줍니다.
+| 데이터 | 상태 | 비고 |
+|---|---|---|
+| 자치구 수치 (`total_pop`, `elderly_pop`, `biz_count`, `ibk_branches`) | ✅ **official** | 공식 통계 반영 완료 |
+| 개별 점포명 (`branch_name`) | ⚠️ **synthetic_placeholder** | 자치구별 **개수는 공식값**, 점포명은 합성 라벨 |
+| 점포 주소·좌표·운영상태 | ❌ 미수집 | 애초에 컬럼을 만들지 않음 (기획서 5.1) |
 
-### 실제 데이터로 교체하는 절차
+즉 **지역 맥락 지표(주지표·보조지표·percentile·라벨·Peer)는 전부 공식 데이터 기반**이고,
+개별 점포는 "몇 개인지"만 공식이며 "이름이 무엇인지"는 아직 아닙니다.
+기획서 14절에서 개별 점포 식별정보 QA를 별도 과제로 둔 것과 같은 경계입니다.
+
+화면에서도 점포를 선택하면 점포명이 합성값이라는 안내가 함께 표시됩니다.
+
+### 데이터를 교체하는 절차
 
 1. 아래 출처에서 원본을 내려받습니다.
 
@@ -202,14 +209,28 @@ Series.rank(method="min", pct=True, ascending=True) * 100
    |---|---|---|
    | `total_pop`, `elderly_pop` | [행정안전부 주민등록 인구통계](https://jumin.mois.go.kr/ageStatMonth.do) | 2026-07-31 |
    | `biz_count` | [KOSIS 전국사업체조사](https://kosis.kr/) | 2024-12-31 |
-   | `ibk_branches`, 점포 목록 | [IBK 공식 영업점찾기](https://kiupbank.ttmap.co.kr/main.jsp) | 2026-09-08 |
+   | `ibk_branches`, 점포 목록 | [IBK 공식 영업점찾기](https://kiupbank.ttmap.co.kr/main.jsp) | 2026-09-19 |
    | 교차검증 | [공공데이터포털 IBK 점포명세](https://www.data.go.kr/data/15006875/fileData.do) | — |
 
-2. `data/raw/seoul_districts_2026-09-08_v3.csv`의 수치를 교체하고 `data_status`를 `official`로 바꿉니다.
+2. `data/raw/seoul_districts_<버전>.csv`의 수치를 교체하고 `data_status`를 `official`로 바꿉니다.
 3. 점포 목록은 실제 점포명으로 교체하고 `name_source`를 `official`로 바꿉니다.
    (자치구별 점포 수는 `ibk_branches`와 반드시 일치해야 합니다)
-4. `python scripts/selfcheck.py` → 전부 PASS 확인.
-5. 기준시점이 바뀌면 `config.DATASET_VERSION`을 올리고 파일명도 함께 바꿉니다.
+4. `python scripts/make_branch_seed.py` → 점포 목록 재생성 (자치구별 합계 자동 일치)
+5. `python scripts/selfcheck.py` → 전부 PASS 확인.
+6. 기준시점이 바뀌면 `config.DATASET_VERSION`을 올리고 파일명도 함께 바꿉니다.
+
+### 데이터 버전 이력
+
+| 버전 | 자치구 수치 | IBK 기준시점 | 비고 |
+|---|---|---|---|
+| `2026-09-08_v3` | placeholder(합성값) | 2026-09-08 | 파이프라인·화면·가드레일 선행 구축 |
+| `2026-09-19_v4` | **official** | 2026-09-19 | 공식 통계 반영. IBK 조회 시점이 바뀌어 버전 상향 |
+
+버전을 올린 이유는 값이 바뀌었기 때문이 아니라 **기준시점이 바뀌었기 때문**입니다.
+기준시점이 달라졌는데 버전을 그대로 두면 같은 버전으로 서로 다른 결과가 나와 재현이 불가능해집니다.
+
+v4 반영 시 실제 집계 합계가 기획서에 기록된 **182개와 정확히 일치**했습니다
+(`scripts/selfcheck.py`의 `IBK 합계 182` 항목).
 
 ### 은행 내부데이터는 어떻게 가져올 것인가 (설계만, P0 구현 제외)
 
