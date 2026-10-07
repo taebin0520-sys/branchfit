@@ -24,6 +24,10 @@ SCHEMA_VERSION = "1.0.0"
 #: 기준시점이 바뀌었는데 버전을 그대로 두면, 결과 재현이 불가능해진다.
 DATASET_VERSION = "2026-09-19_v4"
 
+#: 점포 CSV 파일 버전. 기본은 DATASET_VERSION 과 같습니다.
+#: 실제 점포 파일(v5)을 검증한 뒤 이 값만 바꾸면 점포 파일이 교체됩니다.
+BRANCH_DATASET_VERSION = DATASET_VERSION
+
 #: P0 모집단 = 서울 25개 자치구 (기획서 4절 범위 동결)
 EXPECTED_REGION_COUNT = 25
 
