@@ -19,7 +19,7 @@ RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 
 REGION_FILE = RAW_DIR / f"seoul_districts_{config.DATASET_VERSION}.csv"
-BRANCH_FILE = RAW_DIR / f"ibk_branches_{config.DATASET_VERSION}.csv"
+BRANCH_FILE = RAW_DIR / f"ibk_branches_{config.BRANCH_DATASET_VERSION}.csv"
 
 REGION_COLUMNS = [
     "region_code",

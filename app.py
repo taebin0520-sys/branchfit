@@ -13,8 +13,10 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+import os
+
 from branchfit import briefing as briefing_mod
-from branchfit import config, peers, pipeline
+from branchfit import config, distance, geocode, peers, pipeline
 
 st.set_page_config(page_title="BranchFit P0", page_icon="🏦", layout="wide")
 
@@ -24,6 +26,15 @@ NEUTRAL_BADGE = (
     '<span style="background:#f1f3f5;color:#495057;padding:2px 8px;'
     'border-radius:10px;font-size:0.82rem;">{text}</span>'
 )
+
+
+def kakao_key() -> str | None:
+    """카카오 REST 키. Streamlit secrets → 환경변수 순서. 없으면 None."""
+    try:
+        key = st.secrets.get("KAKAO_REST_API_KEY")
+    except Exception:  # secrets 파일이 없는 환경
+        key = None
+    return key or os.environ.get("KAKAO_REST_API_KEY")
 
 
 @st.cache_data(show_spinner=False)
@@ -134,6 +145,38 @@ with tab_review:
             "점포명은 현재 합성(placeholder) 값입니다. 주소·좌표·운영상태는 "
             "공식 데이터 검증 전이므로 화면에 표시하지 않습니다(기획서 5.1)."
         )
+
+
+    # --- 가장 가까운 다른 IBK 영업점 (직선거리) -------------------------
+    st.markdown("**가장 가까운 다른 IBK 영업점**")
+    key = kakao_key()
+    has_address = "address" in branch_table.columns
+    coords = st.session_state.get("coords")  # 이번 세션 메모리에만 보관
+    if not has_address:
+        st.caption(distance.distance_text(None))
+        st.caption("현재 점포 파일에 주소 정보가 없어 거리를 계산하지 않습니다.")
+    elif not key:
+        st.caption(distance.distance_text(None))
+        st.caption("카카오 API 키가 설정되지 않아 거리를 계산하지 않습니다.")
+    else:
+        if st.button("거리 계산 (주소 변환 약 %d건 호출)" % len(branch_table)):
+            bar = st.progress(0.0)
+            st.session_state["coords"] = geocode.geocode_branches(
+                branch_table, key,
+                progress=lambda i, n: bar.progress(i / n),
+            )
+            bar.empty()
+            coords = st.session_state["coords"]
+        if coords is None:
+            st.caption("버튼을 누르면 주소를 좌표로 변환해 거리를 계산합니다.")
+        else:
+            with_coords = distance.attach_coords(branch_table, coords)
+            st.write(
+                distance.distance_text(
+                    distance.nearest_other_branch(with_coords, branch["branch_id"])
+                )
+            )
+    st.caption(distance.LIMIT_NOTE)
 
     # --- (4) 지역 맥락 지표 --------------------------------------------
     st.subheader("2. 지역 맥락 지표")
