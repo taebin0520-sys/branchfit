@@ -25,7 +25,7 @@ from branchfit import briefing, config, contract as contract_mod, validator  # n
 
 RAW = ROOT / "data" / "raw"
 REGION_CSV = RAW / f"seoul_districts_{config.DATASET_VERSION}.csv"
-BRANCH_CSV = RAW / f"ibk_branches_{config.DATASET_VERSION}.csv"
+BRANCH_CSV = RAW / f"ibk_branches_{config.BRANCH_DATASET_VERSION}.csv"
 
 failures: list[str] = []
 checks: list[tuple[str, bool, str]] = []
@@ -106,8 +106,8 @@ check("자치구 행 수 25", len(regions) == config.EXPECTED_REGION_COUNT, str(
 codes = [r["region_code"] for r in regions]
 check("region_code 중복 없음", len(codes) == len(set(codes)))
 ibk_total = sum(r["ibk_branches"] for r in regions)
-check("IBK 합계 182", ibk_total == config.EXPECTED_BRANCH_TOTAL, str(ibk_total))
-check("점포 행 수 182", len(branches) == config.EXPECTED_BRANCH_TOTAL, str(len(branches)))
+check(f"IBK 합계 {config.EXPECTED_BRANCH_TOTAL}", ibk_total == config.EXPECTED_BRANCH_TOTAL, str(ibk_total))
+check(f"점포 행 수 {config.EXPECTED_BRANCH_TOTAL}", len(branches) == config.EXPECTED_BRANCH_TOTAL, str(len(branches)))
 check(
     "branch_id 중복 없음",
     len({b["branch_id"] for b in branches}) == len(branches),
@@ -196,7 +196,7 @@ check(
 )
 
 # ---------------------------------------------------------------------------
-# 4. 182개 전 점포에 대해 contract + 템플릿 브리핑 + 검증
+# 4. 현재 데이터의 전 점포에 대해 contract + 템플릿 브리핑 + 검증
 # ---------------------------------------------------------------------------
 
 region_by_code = {r["region_code"]: r for r in regions}
@@ -222,7 +222,7 @@ for b in branches:
         briefing_failures.append(f"{b['branch_name']}: {outcome.errors}")
 
 check(
-    "182개 전 점포 템플릿 브리핑이 검증 통과",
+    f"{len(branches)}개 전 점포 템플릿 브리핑이 검증 통과",
     validated == len(branches),
     f"{validated}/{len(branches)} / 예: {briefing_failures[:2]}",
 )
