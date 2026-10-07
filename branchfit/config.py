@@ -22,7 +22,7 @@ SCHEMA_VERSION = "1.0.0"
 #: v3(2026-09-08) -> v4(2026-09-19): 자치구 지역 데이터를 공식 자료로 교체하면서
 #: IBK 영업점 조회 기준시점이 2026-09-08에서 2026-09-19로 바뀌었기 때문에 버전을 올렸다.
 #: 기준시점이 바뀌었는데 버전을 그대로 두면, 결과 재현이 불가능해진다.
-DATASET_VERSION = "2026-09-19_v4"
+DATASET_VERSION = "2026-10-08_v5"
 
 #: 점포 CSV 파일 버전. 기본은 DATASET_VERSION 과 같습니다.
 #: 실제 점포 파일(v5)을 검증한 뒤 이 값만 바꾸면 점포 파일이 교체됩니다.
@@ -32,8 +32,8 @@ BRANCH_DATASET_VERSION = DATASET_VERSION
 EXPECTED_REGION_COUNT = 25
 
 #: P0 분석 대상 IBK 영업점 수.
-#: 공식 영업점찾기 서울 검색 185개(출장소 4곳 포함) - 기업금융센터 3곳 = 182개
-EXPECTED_BRANCH_TOTAL = 182
+#: 공공 CSV 15006875 서울 185행 - 기업금융센터 3 - 이동점포 1 = 181개
+EXPECTED_BRANCH_TOTAL = 181
 
 #: 모집단 이름. 화면/브리핑 문구에 쓰이는 표현을 한 곳에서 관리.
 POPULATION_LABEL = "서울 25개 자치구"
@@ -170,7 +170,7 @@ EVIDENCE = {
     },
     "EV-BIZ": {
         "field": "biz_count",
-        "source": "KOSIS 2024년 기준 전국사업체조사(2025년 조사)",
+        "source": "KOSIS 전국사업체조사 기존 값 (시군구 확정 통계표 대조 필요)",
         "reference_date": "2024-12-31",
         "url": (
             "https://kosis.kr/upsHtml/online/downSrvcFile.do"
@@ -180,17 +180,17 @@ EVIDENCE = {
     },
     "EV-IBK": {
         "field": "ibk_branches, 개별 점포 목록",
-        "source": "IBK기업은행 공식 영업점찾기",
-        "reference_date": "2026-09-19",
-        "url": "https://kiupbank.ttmap.co.kr/main.jsp",
+        "source": "공공데이터포털 15006875 기업은행 점포명세 (고정 점포 표본)",
+        "reference_date": "2025-12-31",
+        "url": "https://www.data.go.kr/data/15006875/fileData.do",
         "role": "밀도지표 분자 · 개별 점포 식별",
     },
     "EV-IBK-XCHK": {
         "field": "점포명세 교차검증",
         "source": "공공데이터포털 IBK 점포명세",
-        "reference_date": "2026-09-19",
+        "reference_date": "2025-12-31",
         "url": "https://www.data.go.kr/data/15006875/fileData.do",
-        "role": "교차검증용",
+        "role": "실명·주소 원본; 현재 운영상태 확인 자료 아님",
     },
     "EV-FSC-01": {
         "field": "검토영역 참고",
@@ -218,6 +218,8 @@ METRIC_EVIDENCE_IDS = ["EV-REGION", "EV-POP", "EV-BIZ", "EV-IBK"]
 LIMITATIONS = [
     "서울 25개 자치구 내부의 상대 비교이며, 절대적인 충분/부족 기준이 아닙니다.",
     "IBK 영업점만 반영하므로 전체 은행의 금융 접근성을 나타내지 않습니다.",
+    "사업체 수는 기존 값을 유지했으며 시군구 확정 통계표 대조가 필요합니다.",
+    "현업 니즈는 가설이며 인터뷰를 통한 현업 검증 전입니다.",
     "사업체 수와 총인구만으로는 실제 금융 이용량, 고객 구성, 점포 수익성을 알 수 없습니다.",
     "지점별 이용권역, 생활인구, 이동거리, 운영비용, 거래량, 고객 이탈은 P0에서 측정하지 않습니다.",
     "신설·폐쇄·최적입지·대체수단·수익성·금융수요를 추천하거나 예측하지 않습니다.",

@@ -1,0 +1,44 @@
+{
+  "source_url": "https://www.data.go.kr/data/15006875/fileData.do",
+  "source_date": "2025-12-31",
+  "retrieved_date": "2026-10-08",
+  "source_sha256": "ff77c179d7d5d4054b50969e504b95b5b51aa04a37e0510ea245f21285386d52",
+  "source_rows": 629,
+  "seoul_rows": 185,
+  "fixed_branch_rows": 181,
+  "exclusion_rule": "기업금융센터 및 이동점포 제외; ATM 파일은 입력하지 않음",
+  "excluded_rows": [
+    {
+      "점포명": "강남대기업금융센터",
+      "주소": "서울특별시 강남구 강남대로 390"
+    },
+    {
+      "점포명": "본부대기업금융센터",
+      "주소": "서울특별시 중구 을지로 82"
+    },
+    {
+      "점포명": "이동점포(U-IBK3호)",
+      "주소": "서울특별시 중구 을지로 79"
+    },
+    {
+      "점포명": "구로동기업금융센터",
+      "주소": "서울특별시 구로구 디지털로32길 55"
+    }
+  ],
+  "district_count_changes": {
+    "금천구": {
+      "before": 14,
+      "after": 13
+    },
+    "서초구": {
+      "before": 15,
+      "after": 14
+    },
+    "강남구": {
+      "before": 23,
+      "after": 24
+    }
+  },
+  "biz_count_status": "기존 값 유지; 시군구 확정 통계표 대조 필요",
+  "current_operations_status": "기준일 이후 운영·주소 변경 미확인"
+}

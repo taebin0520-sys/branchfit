@@ -122,7 +122,7 @@ def _validate_cross(regions: pd.DataFrame, branches: pd.DataFrame) -> None:
     # 자치구별 점포 수 == 지역 데이터의 ibk_branches
     counted = branches.groupby("region_code").size()
     declared = regions.set_index("region_code")["ibk_branches"]
-    diff = (counted - declared).dropna()
+    diff = counted.reindex(declared.index, fill_value=0) - declared
     mismatch = diff[diff != 0]
     if not mismatch.empty:
         raise DataIntegrityError(

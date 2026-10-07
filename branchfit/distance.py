@@ -14,6 +14,14 @@ import pandas as pd
 EARTH_RADIUS_KM = 6371.0088
 
 
+def valid_coordinates(lat, lon) -> bool:
+    try:
+        lat, lon = float(lat), float(lon)
+        return math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90 and -180 <= lon <= 180
+    except (TypeError, ValueError, OverflowError):
+        return False
+
+
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """두 좌표 사이의 직선거리(km). 지구를 구로 보고 계산합니다."""
     p1, p2 = math.radians(lat1), math.radians(lat2)
@@ -30,7 +38,11 @@ def nearest_other_branch(branches: pd.DataFrame, branch_id: str) -> dict | None:
             선택 점포 좌표가 없거나 비교할 점포가 없으면 None.
     동일 거리면 branch_id 오름차순으로 고릅니다.
     """
-    ok = branches[branches["coord_status"] == "ok"]
+    required = {"coord_status", "lat", "lon", "branch_id", "branch_name"}
+    if not required.issubset(branches.columns):
+        return None
+    valid = [valid_coordinates(r.lat, r.lon) for r in branches.itertuples()]
+    ok = branches[(branches["coord_status"] == "ok") & pd.Series(valid, index=branches.index)]
     me = ok[ok["branch_id"] == branch_id]
     if me.empty:
         return None  # 선택 점포 좌표 미확인
@@ -76,7 +88,7 @@ def attach_coords(branches: pd.DataFrame, coords: dict) -> pd.DataFrame:
     lats, lons, status = [], [], []
     for bid in out["branch_id"]:
         pair = coords.get(bid)
-        if pair is None:
+        if not isinstance(pair, (tuple, list)) or len(pair) != 2 or not valid_coordinates(*pair):
             lats.append(None)
             lons.append(None)
             status.append("missing")

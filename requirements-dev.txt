@@ -1,0 +1,2 @@
+-r requirements.txt
+pypdf>=5.0  # PDF 페이지·텍스트 회귀 검증

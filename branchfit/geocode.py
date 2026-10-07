@@ -15,6 +15,7 @@ import urllib.request
 from typing import Callable
 
 import pandas as pd
+from .distance import valid_coordinates
 
 KAKAO_ADDRESS_URL = "https://dapi.kakao.com/v2/local/search/address.json"
 TIMEOUT_SEC = 5
@@ -42,7 +43,8 @@ def geocode_address(
         if not docs:
             return None
         # 카카오 응답: x = 경도, y = 위도
-        return float(docs[0]["y"]), float(docs[0]["x"])
+        pair = float(docs[0]["y"]), float(docs[0]["x"])
+        return pair if valid_coordinates(*pair) else None
     except Exception:  # 네트워크·형식 오류는 모두 '좌표 없음'으로 처리
         return None
 
@@ -63,7 +65,10 @@ def geocode_branches(
     has_address = "address" in branches.columns
     for i, row in enumerate(branches.itertuples(index=False), start=1):
         addr = getattr(row, "address", None) if has_address else None
-        result[row.branch_id] = geocoder(addr, api_key) if addr else None
+        try:
+            result[row.branch_id] = geocoder(addr, api_key) if api_key and isinstance(addr, str) and addr.strip() else None
+        except Exception:
+            result[row.branch_id] = None
         if progress:
             progress(i, total)
     return result

@@ -33,7 +33,7 @@ from branchfit import config  # noqa: E402
 # 여기에 버전을 직접 쓰면 데이터 교체 시 파일명만 옛 버전으로 남습니다.
 RAW_DIR = ROOT / "data" / "raw"
 REGION_CSV = RAW_DIR / f"seoul_districts_{config.DATASET_VERSION}.csv"
-BRANCH_CSV = RAW_DIR / f"ibk_branches_{config.DATASET_VERSION}.csv"
+BRANCH_CSV = RAW_DIR / "ibk_branches_synthetic_legacy.csv"
 
 # 자치구별 점포명 후보 (해당 자치구 내 지역명 기반, 합성 라벨용).
 # 리스트 길이는 자치구별 ibk_branches 이상이어야 합니다.

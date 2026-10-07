@@ -16,7 +16,7 @@ import streamlit as st
 import os
 
 from branchfit import briefing as briefing_mod
-from branchfit import config, distance, geocode, peers, pipeline
+from branchfit import config, distance, geocode, peers, pipeline, report
 
 st.set_page_config(page_title="BranchFit P0", page_icon="🏦", layout="wide")
 
@@ -132,6 +132,8 @@ with tab_review:
         "선택한 점포가 속한 **자치구의 지역 맥락**을 확인하는 검토 보조 화면입니다. "
         "통·폐합 여부를 판정하거나 추천하지 않으며, 최종 판단은 담당자가 수행합니다."
     )
+    st.info("보완 중 프로토타입 · 현업 검증 전 · 서울 25개 자치구만 사용합니다.")
+    st.caption("현업 니즈는 [가설]입니다. 인터뷰로 확인된 요구사항이 아닙니다. 디자이너 시안 반영 전입니다.")
 
     # --- (3) 점포 기본 정보 -------------------------------------------
     st.subheader("1. 점포 기본 정보")
@@ -140,6 +142,10 @@ with tab_review:
     basic[1].metric("점포 유형", branch["branch_type"])
     basic[2].metric("소속 자치구", region["region_name"])
     basic[3].metric("region_code", region["region_code"])
+    address = branch.get("address")
+    if isinstance(address, str) and address.strip():
+        st.write("주소:", address)
+        st.caption(f"점포 원본 기준시점: {branch.get('source_date', '미확인')}")
     if branch.get("name_source") == "synthetic_placeholder":
         st.caption(
             "점포명은 현재 합성(placeholder) 값입니다. 주소·좌표·운영상태는 "
@@ -151,6 +157,11 @@ with tab_review:
     st.markdown("**가장 가까운 다른 IBK 영업점**")
     key = kakao_key()
     has_address = "address" in branch_table.columns
+    nearest = None
+    coords_scope = tuple(zip(branch_table["branch_id"], branch_table.get("address", pd.Series([""] * len(branch_table)))))
+    if st.session_state.get("coords_scope") != coords_scope:
+        st.session_state.pop("coords", None)
+        st.session_state["coords_scope"] = coords_scope
     coords = st.session_state.get("coords")  # 이번 세션 메모리에만 보관
     if not has_address:
         st.caption(distance.distance_text(None))
@@ -168,15 +179,15 @@ with tab_review:
             bar.empty()
             coords = st.session_state["coords"]
         if coords is None:
+            st.caption(distance.distance_text(None))
             st.caption("버튼을 누르면 주소를 좌표로 변환해 거리를 계산합니다.")
         else:
             with_coords = distance.attach_coords(branch_table, coords)
-            st.write(
-                distance.distance_text(
-                    distance.nearest_other_branch(with_coords, branch["branch_id"])
-                )
-            )
+            nearest = distance.nearest_other_branch(with_coords, branch["branch_id"])
+            st.write(distance.distance_text(nearest))
+            st.caption(f"좌표 확인 {int((with_coords['coord_status'] == 'ok').sum())}/{len(with_coords)}개. 좌표가 있는 점포끼리만 비교합니다.")
     st.caption(distance.LIMIT_NOTE)
+    st.caption("좌표 누락 점포가 있으면 전체 점포 중 최근접을 보장하지 않습니다.")
 
     # --- (4) 지역 맥락 지표 --------------------------------------------
     st.subheader("2. 지역 맥락 지표")
@@ -252,14 +263,37 @@ with tab_review:
     st.subheader("5. AI 에이전트 브리핑")
     caller = briefing_mod.call_llm if use_llm else None
     with st.spinner("브리핑 생성 중..."):
-        contract, outcome = pipeline.build_briefing_for_branch(
-            region_table, branch_table, branch["branch_id"], llm_caller=caller
-        )
+        contract = pipeline.build_contract_for_branch(region_table, branch_table, branch["branch_id"])
+        outcome = (briefing_mod.generate_briefing(contract, llm_caller=caller) if use_llm else {
+            "briefing": briefing_mod.build_template_briefing(contract), "mode": "template", "attempts": [],
+        })
     st.markdown(
         NEUTRAL_BADGE.format(text=briefing_mod.MODE_LABELS[outcome["mode"]]),
         unsafe_allow_html=True,
     )
-    st.markdown(briefing_mod.render_markdown(outcome["briefing"]))
+    st.write(outcome["briefing"]["summary"])
+    evidence_card, limitation_card, check_card = st.columns(3)
+    with evidence_card, st.container(border=True):
+        st.markdown("**근거**")
+        for item in outcome["briefing"]["evidence_points"] + outcome["briefing"]["context_points"]:
+            st.write("• " + item)
+    with limitation_card, st.container(border=True):
+        st.markdown("**한계**")
+        st.write("사업체 시군구 확정 통계표 대조: 확인 필요")
+        for item in outcome["briefing"]["limitation_points"]:
+            st.write("• " + item)
+    with check_card, st.container(border=True):
+        st.markdown("**추가 확인**")
+        st.write("현업 니즈 [가설] · 현업 검증 전")
+        for item in outcome["briefing"]["next_check_points"]:
+            st.write("• " + item)
+
+    try:
+        pdf = report.build_review_pdf(contract, outcome, branch.to_dict(), nearest)
+        st.download_button("A4 검토 참고 자료 내려받기", data=pdf,
+                           file_name=f"branchfit_review_{branch['branch_id']}.pdf", mime="application/pdf")
+    except ValueError as exc:
+        st.error(str(exc))
 
     with st.expander("브리핑 생성·검증 로그"):
         st.write(
@@ -339,6 +373,7 @@ with tab_regions:
 
 
 with tab_sources:
+    st.info("사업체 시군구 확정 통계표 확인 필요 · 현업 검증 전 · 마이AI랩 기존 프로젝트 사용·제출 규정 확인 필요")
     st.subheader("데이터 출처 · 기준시점")
     evidence_rows = [
         {

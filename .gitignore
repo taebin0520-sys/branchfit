@@ -4,6 +4,14 @@ __pycache__/
 .venv/
 venv/
 .env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+**/*coords*.csv
+**/*coordinates*.csv
+data/local/
+tmp/
+output/
 .DS_Store
 
 # 파생 산출물 (원천 CSV에서 언제든 재생성 가능)
