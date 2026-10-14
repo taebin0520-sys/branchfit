@@ -10,6 +10,10 @@
 4) 단계별 행 수가 맞으면 --dry-run 을 빼고 실행한다.
 
 행 수가 기대와 다르면 파일을 만들지 않고 차이만 출력한다.
+
+참고: 현재 v5 점포 파일은 scripts/import_official_branches.py 로 만든다.
+이 스크립트는 ATM 구분 컬럼이 있는 다른 입력 형식용 보조 경로이며,
+출력 버전은 config.DATASET_VERSION 을 따르고 기존 파일은 덮어쓰지 않는다.
 """
 
 from __future__ import annotations
@@ -26,7 +30,8 @@ sys.path.insert(0, str(ROOT))
 from branchfit import config  # noqa: E402
 from branchfit.branch_prep import PrepSpec, prepare_v5  # noqa: E402
 
-OUTPUT_VERSION = "2025-12-31_v5"
+#: 버전 문자열을 따로 두지 않고 config 를 따른다 (불일치 방지).
+OUTPUT_VERSION = config.DATASET_VERSION
 
 
 def read_csv_any(path: Path) -> pd.DataFrame:
@@ -90,7 +95,6 @@ def main() -> int:
         raise SystemExit(f"이미 있는 파일은 덮어쓰지 않습니다: {out}")
     res.table.to_csv(out, index=False, encoding="utf-8")
     print(f"\n저장: {out}")
-    print(f"적용하려면 config.BRANCH_DATASET_VERSION = \"{OUTPUT_VERSION}\" 로 바꾸세요.")
     return 0
 
 
