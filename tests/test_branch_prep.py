@@ -31,7 +31,7 @@ def _spec(**kw):
 
 def test_filter_steps_and_ids():
     res = prepare_v5(_raw(), REGIONS, _spec())
-    assert res.steps == [("원본", 6), ("① 서울", 5), ("② ATM 제외", 4), ("③ 기업금융센터 제외", 3)]
+    assert res.steps == [("원본", 6), ("① 서울", 5), ("② ATM 제외", 4), ("③ 기업금융센터·이동점포 제외", 3)]
     assert res.ok
     assert res.table["branch_id"].tolist() == ["IBK-11110-01", "IBK-11110-02", "IBK-11140-01"]
     assert (res.table["coord_status"] == "missing").all()
@@ -48,3 +48,18 @@ def test_missing_column_is_reported():
     res = prepare_v5(_raw(), REGIONS, _spec(atm_col="없는컬럼"))
     assert res.table is None and not res.ok
     assert any("컬럼 없음" in n for n in res.notes)
+
+
+def test_defaults_match_v5_config():
+    from branchfit import config
+    spec = PrepSpec(name_col="a", address_col="b", atm_col="c", atm_pattern="x")
+    assert spec.expected_final == config.EXPECTED_BRANCH_TOTAL == 181
+    assert "이동점포" in spec.exclude_name_pattern
+
+
+def test_mobile_branch_is_excluded():
+    raw = _raw()
+    raw.loc[len(raw)] = ["이동점포(U-IBK3호) ", "서울특별시 중구 9", "영업점"]
+    res = prepare_v5(raw, REGIONS, _spec())
+    assert res.ok
+    assert "이동점포(U-IBK3호)" not in " ".join(res.table["branch_name"])

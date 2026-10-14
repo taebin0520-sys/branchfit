@@ -102,7 +102,7 @@ def test_real_dataset_label_distribution_is_7_10_8():
 
 
 def test_real_dataset_passes_integrity_checks():
-    """25행 / IBK 182 / 자치구별 점포 수 일치."""
+    """25행 / IBK 181 / 자치구별 점포 수 일치."""
     regions, branches = data.load_all()
     assert len(regions) == config.EXPECTED_REGION_COUNT
     assert int(regions["ibk_branches"].sum()) == config.EXPECTED_BRANCH_TOTAL
