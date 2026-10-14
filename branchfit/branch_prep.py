@@ -1,7 +1,7 @@
 """공공데이터 점포 CSV → v5 점포 파일 변환 로직.
 
 - 입력 CSV의 컬럼명·ATM 구분 기준은 확인된 바가 없어서, 호출하는 쪽이 명시적으로 넘깁니다.
-- 필터 순서: ① 서울 → ② ATM 제외 → ③ 기업금융센터 제외. 단계마다 행 수를 기록합니다.
+- 필터 순서: ① 서울 → ② ATM 제외 → ③ 기업금융센터·이동점포 제외. 단계마다 행 수를 기록합니다.
 - 기대 행 수와 다르면 억지로 맞추지 않고 차이만 보고합니다.
 - 좌표는 만들지 않습니다(lat, lon 컬럼은 비워 둡니다).
 """
@@ -26,11 +26,11 @@ class PrepSpec:
     atm_col: str
     atm_pattern: str                 # atm_col 값에 이 정규식이 들어 있으면 ATM 행
     type_col: str | None = None      # 없으면 branch_type 은 '영업점'
-    exclude_name_pattern: str = "기업금융센터"
+    exclude_name_pattern: str = "기업금융센터|^이동점포"  # import_official_branches.py 와 동일
     seoul_keyword: str = "서울"
     source_date: str = "2025-12-31"
-    expected_after_atm: int = 185    # 서울, 기업금융센터 포함 기준
-    expected_final: int = 182
+    expected_after_atm: int = 185    # 서울, 기업금융센터·이동점포 포함 기준
+    expected_final: int = 181        # v5: 기업금융센터 3곳·이동점포 1곳 제외
 
 
 @dataclass
@@ -74,7 +74,7 @@ def prepare_v5(raw: pd.DataFrame, regions: pd.DataFrame, spec: PrepSpec) -> Prep
     hq = df[spec.name_col].astype(str).str.contains(spec.exclude_name_pattern, regex=True, na=False)
     res.notes.append(f"제외 대상 {int(hq.sum())}건: {df.loc[hq, spec.name_col].tolist()}")
     df = df[~hq]
-    res.steps.append(("③ 기업금융센터 제외", len(df)))
+    res.steps.append(("③ 기업금융센터·이동점포 제외", len(df)))
     if len(df) != spec.expected_final:
         res.notes.append(
             f"③단계 기대 {spec.expected_final}건, 실제 {len(df)}건 "
