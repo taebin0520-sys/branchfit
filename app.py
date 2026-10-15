@@ -101,7 +101,7 @@ branch = region_branches.loc[
 
 st.sidebar.markdown("---")
 use_llm = st.sidebar.checkbox(
-    "AI 에이전트(LLM) 호출",
+    "AI 요약(LLM) 호출",
     value=briefing_mod.llm_configured(),
     disabled=not briefing_mod.llm_configured(),
     help=(
@@ -260,7 +260,7 @@ with tab_review:
     )
 
     # --- (5) AI 브리핑 -------------------------------------------------
-    st.subheader("5. AI 에이전트 브리핑")
+    st.subheader("5. AI 요약 브리핑")
     caller = briefing_mod.call_llm if use_llm else None
     with st.spinner("브리핑 생성 중..."):
         contract = pipeline.build_contract_for_branch(region_table, branch_table, branch["branch_id"])
