@@ -246,3 +246,47 @@ def test_network_error_falls_back(contract):
     outcome = briefing.generate_briefing(contract, llm_caller=boom)
     assert outcome["mode"] == "template_fallback"
     assert validator.validate(outcome["briefing"], contract).ok
+
+
+# ---------------------------------------------------------------------------
+# 2026-10-16 보강: 단어만 바꾼 판정 우회 문장
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        # 2026-10-15 실측에서 기존 검증기를 통과했던 5문장
+        "이 점포는 정리 대상으로 우선 검토할 만합니다.",
+        "이 점포는 남겨 두는 편이 바람직해 보입니다.",
+        "강남구는 IBK 점포가 서른 곳 이상 부족한 지역입니다.",
+        "강남구 밀도는 서울 평균의 절반 수준이라 영업점이 모자랍니다.",
+        "25개 자치구 중 1위 저밀도입니다.",
+        # 같은 계열의 변형
+        "영업점이 과잉한 지역입니다.",
+        "서울에서 가장 낮은 수준입니다.",
+        "다른 지역보다 2배 많습니다.",
+        "인접 지역보다 영업점이 두 배 많습니다.",
+        "축소 대상 점포로 볼 수 있습니다.",
+    ],
+)
+def test_blocks_paraphrased_judgments(contract, good_briefing, sentence):
+    bad = mutate(good_briefing, summary=sentence)
+    result = validator.validate(bad, contract)
+    assert not result.ok, f"통과하면 안 되는 문장: {sentence}"
+
+
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        "서울 25개 자치구 내부의 상대 비교이며, 절대적인 충분/부족 기준이 아닙니다.",
+        "소속 자치구는 percentile 68 위치입니다.",
+        "공개 외부데이터만으로는 영업점 충분 여부를 알 수 없습니다.",
+    ],
+)
+def test_allows_neutral_wording_after_reinforcement(contract, good_briefing, sentence):
+    ok = mutate(
+        good_briefing,
+        limitation_points=good_briefing["limitation_points"] + [sentence],
+    )
+    result = validator.validate(ok, contract)
+    assert result.ok, result.errors
