@@ -52,6 +52,7 @@ _GU_STOPWORDS = config.REGION_TOKEN_STOPWORDS | {
 _DATE_LIKE = re.compile(r"\d{4}-\d{2}-\d{2}(?:_v\d+)?")
 _THOUSAND_SEP = re.compile(r"(?<=\d),(?=\d)")
 _NUMBER = re.compile(r"\d+(?:\.\d+)?")
+_KOREAN_NUMERAL = re.compile(config.KOREAN_NUMERAL_PATTERN)
 _GU_TOKEN = re.compile(r"[가-힣]{2,5}구")
 _BRANCH_TOKEN = re.compile(r"[가-힣A-Za-z0-9]{2,12}(?:영업점|출장소|지점|센터)")
 
@@ -169,6 +170,12 @@ def check_numbers(text: str, contract: dict[str, Any], result: ValidationResult)
     )
     if unknown:
         result.add(f"입력에 없는 숫자 사용: {unknown}")
+
+    # 한글 숫자("서른 곳", "두 배")는 위 정규식에 걸리지 않으므로 따로 막습니다.
+    # 고유명(점포명 등)을 지운 뒤에 검사해 '한강로'의 '한' 같은 오탐을 피합니다.
+    korean = sorted(set(_KOREAN_NUMERAL.findall(cleaned)))
+    if korean:
+        result.add(f"한글 숫자 사용(입력 대조 불가): {korean}")
 
 
 # ---------------------------------------------------------------------------
